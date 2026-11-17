@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 assets/card-2x.png
 .hermes-package.json
+
+# local draft of the catalog entry, kept out of the repo
+catalog-entry.yaml
