@@ -137,14 +137,17 @@ function SpendHeader({ state }) {
 
 function JobRow({ row, move, dense }) {
   const next = NEXT_STATUS[row.status] || 'applied'
+  // Nothing here may shrink an action off the edge: a narrow pane used to push the
+  // buttons out of the card entirely. Text truncates, actions never do, and the meta
+  // row wraps instead of overflowing.
   return jsxs('div', {
     className: cn(
-      'group flex flex-col gap-1 border-b border-(--ui-stroke-secondary) px-3 py-2',
+      'group flex min-w-0 flex-col gap-1 overflow-hidden border-b border-(--ui-stroke-secondary) px-3 py-2',
       dense ? '' : 'hover:bg-(--ui-stroke-secondary)/40'
     ),
     children: [
       jsxs('div', {
-        className: 'flex items-baseline gap-2',
+        className: 'flex min-w-0 items-start gap-2',
         children: [
           jsx('span', {
             className: 'min-w-0 flex-1 truncate text-[13px] font-medium',
@@ -152,40 +155,42 @@ function JobRow({ row, move, dense }) {
             children: row.title || '(untitled role)'
           }),
           row.url
-            ? jsx(Button, {
-                size: 'sm',
-                variant: 'ghost',
-                onClick: () => api.os.openExternal(row.url),
-                children: 'Open'
+            ? jsx('span', {
+                className: 'shrink-0',
+                children: jsx(Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  onClick: () => api.os.openExternal(row.url),
+                  children: 'Open'
+                })
               })
             : null
         ]
       }),
-      jsxs('div', {
-        className: 'flex items-center gap-1.5 text-[11px] text-(--ui-text-tertiary)',
-        children: [
-          jsx('span', { className: 'truncate', children: row.company || '—' }),
-          row.location ? jsx('span', { children: '·' }) : null,
-          row.location ? jsx('span', { className: 'truncate', children: row.location }) : null
-        ]
+      jsx('div', {
+        className: 'min-w-0 truncate text-[11px] text-(--ui-text-tertiary)',
+        title: `${row.company || ''}${row.location ? ` · ${row.location}` : ''}`,
+        children: `${row.company || '—'}${row.location ? ` · ${row.location}` : ''}`
       }),
       jsxs('div', {
-        className: 'flex items-center gap-1.5',
+        className: 'flex min-w-0 flex-wrap items-center gap-1.5',
         children: [
-          jsx(Badge, { children: row.status }),
+          jsx('span', { className: 'shrink-0', children: jsx(Badge, { children: row.status }) }),
           row.person
             ? jsx('span', {
-                className: 'min-w-0 truncate text-[11px] text-(--ui-text-quaternary)',
+                className: 'min-w-0 max-w-[45%] truncate text-[11px] text-(--ui-text-quaternary)',
                 title: row.person,
                 children: row.person
               })
             : null,
-          jsx('span', { className: 'flex-1' }),
-          jsx(Button, {
-            size: 'sm',
-            variant: 'ghost',
-            onClick: () => move.mutate({ id: row.job_id, status: next }),
-            children: `→ ${next}`
+          jsx('span', {
+            className: 'ml-auto shrink-0',
+            children: jsx(Button, {
+              size: 'sm',
+              variant: 'ghost',
+              onClick: () => move.mutate({ id: row.job_id, status: next }),
+              children: `→ ${next}`
+            })
           })
         ]
       })
