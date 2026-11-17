@@ -3,12 +3,16 @@
 Every call is one metered request to `https://treg.to/call/<id>` with
 `X-Treg-Token`. Three headers matter:
 
-  X-Treg-Token            the team key (environment, else the profile .env)
+  X-Treg-Token            the team key, resolved through Hermes's secret scope
   X-Treg-Route-Max-Cost   a ceiling on THIS call, in micro-USD
   X-Treg-Route-Waterfall  "0" pays one provider only instead of every provider tried
 
 What a call cost comes back as `x-treg-cost-micro`, and the body's `_treg` block
 names the provider that actually served it.
+
+The key is read with `agent.secret_scope.get_secret`, never from a file: that is the
+route that honours the active profile, so a gateway serving several profiles cannot
+hand this plugin another profile's credential. `.env` is never parsed here.
 """
 
 from __future__ import annotations
@@ -18,13 +22,13 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
 from typing import Any
 
 from . import store
 
 BASE = "https://treg.to"
 MAX_BODY = 6 * 1024 * 1024
+KEY_NAME = "TREG_TOKEN"
 
 # Verified against the live catalog (catalog_get) and with real calls on 2026-11-17.
 # The marketing page lists two ids that do not exist (`people.search`,
@@ -51,57 +55,25 @@ class TregError(Exception):
         self.detail = detail
 
 
-def _from_env_file() -> str:
-    """TREG_TOKEN from the profile's .env, if present.
+def token() -> str:
+    """The team key, through Hermes's profile-aware secret route.
 
-    The .env fallback matters: a secret written by set_env_secret lands in the file,
-    and a running gateway keeps the environment it started with.
+    `get_secret` resolves the active profile's value and falls through to the process
+    environment on a single-profile install. It is deliberately not a file read: rule
+    11 of the plugin catalog forbids reaching into `.env` or any other credential
+    store, and multiplexed gateways must not leak a sibling profile's key.
     """
     try:
-        home = Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
-        env_file = home / ".env"
-        if not env_file.exists():
-            return ""
-        for line in env_file.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, _, raw = line.partition("=")
-            if key.strip() == "TREG_TOKEN":
-                return raw.strip().strip("'").strip('"')
+        from agent.secret_scope import get_secret  # type: ignore
+
+        val = get_secret(KEY_NAME, "") or ""
+        if str(val).strip():
+            return str(val).strip()
     except Exception:
-        return ""
-    return ""
-
-
-def token_candidates() -> list[tuple[str, str]]:
-    """Every key this install knows, newest last.
-
-    Both sources can disagree — the environment may hold a key the gateway loaded at
-    start while the file holds a rotated one — so a call tries them in preference
-    order and remembers the one the API accepted.
-    """
-    vals: list[tuple[str, str]] = []
-    file_val = _from_env_file()
-    if file_val:
-        vals.append((".env", file_val))
-    env = os.environ.get("TREG_TOKEN", "").strip()
-    if env and env != file_val:
-        vals.append(("env", env))
-    return vals
-
-
-_PREFERRED = {"source": ""}
-
-
-def token() -> str:
-    cands = token_candidates()
-    if not cands:
-        return ""
-    for source, val in cands:
-        if source == _PREFERRED["source"]:
-            return val
-    return cands[0][1]
+        # Older Hermes without the secret scope, or a scope that refuses: the plain
+        # environment is the documented fallback for a single-profile install.
+        pass
+    return os.environ.get(KEY_NAME, "").strip()
 
 
 def tool_id(role: str) -> str:
@@ -150,43 +122,13 @@ def call(
     budget_micro: int = 2_000_000,
     waterfall: str | None = None,
 ) -> tuple[Any, dict[str, Any]]:
-    """One metered call, trying each known key until the API accepts one."""
-    cands = token_candidates()
-    if not cands:
+    """One metered call. Returns (answer, meta). Raises TregError."""
+    tok = token()
+    if not tok:
         raise TregError(
-            "TREG_TOKEN is not set",
-            hint="this plugin speaks only to treg.to: put the team key in the environment (or the profile .env) and retry",
+            f"{KEY_NAME} is not set",
+            hint="this plugin speaks only to treg.to: add the treg team key through Hermes (Settings → Plugins, or the install prompt) and retry",
         )
-    ordered = sorted(cands, key=lambda c: (c[0] != _PREFERRED["source"], c[0] != ".env"))
-    last: TregError | None = None
-    for source, key in ordered:
-        try:
-            payload, meta = _call_once(
-                role, key, body=body, query=query, method=method, timeout=timeout,
-                max_cost_micro=max_cost_micro, budget_micro=budget_micro, waterfall=waterfall,
-            )
-            _PREFERRED["source"] = source
-            meta["key_source"] = source
-            return payload, meta
-        except TregError as e:
-            if e.status != 401:
-                raise
-            last = e
-    raise last or TregError("no usable TREG_TOKEN")
-
-
-def _call_once(
-    role: str,
-    tok: str,
-    *,
-    body: dict[str, Any] | None = None,
-    query: dict[str, Any] | None = None,
-    method: str | None = None,
-    timeout: int = 120,
-    max_cost_micro: int = 500_000,
-    budget_micro: int = 2_000_000,
-    waterfall: str | None = None,
-) -> tuple[Any, dict[str, Any]]:
     left = budget_left_micro(budget_micro)
     if left <= 0:
         raise TregError(

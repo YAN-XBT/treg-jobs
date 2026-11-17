@@ -42,9 +42,9 @@ python "$HERMES_HOME/skills/autonomous-ai-agents/hermes-agent/scripts/set_env_se
   --hint "treg dashboard → Your API key"
 ```
 
-The plugin reads `TREG_TOKEN` from the environment, and falls back to the profile's `.env` — so a key
-written while the app is running works without a restart. If the environment holds an older key, the
-first call tries both and remembers whichever the API accepts.
+The plugin reads `TREG_TOKEN` with `agent.secret_scope.get_secret`, the route that honours the active
+profile — it never parses `.env` or any other credential file, so a gateway serving several profiles
+cannot hand it a sibling's key.
 
 No other dependencies: no CLI, no Node, no provider accounts. `python_dependencies: []`.
 
@@ -77,9 +77,9 @@ reports `new_since_last_seen`, and the tracker keeps the pipeline that a chat sc
 - **Network:** HTTPS requests to `https://treg.to` only, one per tool call, carrying the team key in
   `X-Treg-Token`, the call's cost ceiling, and optionally `X-Treg-Route-Waterfall`. treg reaches the
   underlying providers with its own credentials. No provider account, key or cookie lives here.
-- **Credentials:** `TREG_TOKEN` is read from the environment or the profile `.env` at call time. It is
-  never written to the plugin's data directory, never logged, and never included in a result or an
-  error message.
+- **Credentials:** `TREG_TOKEN` is resolved through Hermes's secret scope at call time. The plugin
+  never reads a `.env`, `auth.json`, keychain or vendor token file; it never stores the key, never
+  logs it, and never includes it in a result or an error message.
 - **Storage:** one SQLite file in the plugin data directory — cached postings, the pipeline, the
   profile, and the spend ledger. Nothing else is written.
 - **No telemetry, no shell, no background process, nothing applied to.**

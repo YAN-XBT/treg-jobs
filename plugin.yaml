@@ -15,8 +15,10 @@ description: >
   Read-only with respect to the world: it never submits an application, never emails anyone, never
   logs in to a job board. Every send stays the human's action, and a found address is labelled the
   provider's best match rather than a confirmed one.
-  Disclosure — this plugin speaks only to https://treg.to and needs a treg team key: set TREG_TOKEN
-  (read from the environment, else the profile's .env). Every network call is one metered request to
+  Disclosure — this plugin speaks only to https://treg.to and needs a treg team key: declare TREG_TOKEN
+  through Hermes (Settings → Plugins, or the install prompt); it is read with
+  agent.secret_scope.get_secret, so the active profile's value is used and no credential file is ever
+  parsed. Every network call is one metered request to
   treg.to/call/<id> carrying that key, the call's cost ceiling in X-Treg-Route-Max-Cost, and an
   optional X-Treg-Route-Waterfall; treg then reaches the underlying provider with its own
   credentials, so no provider account or key lives here. Calls cost money from that team's prepaid
@@ -25,7 +27,8 @@ description: >
   result reports the cost from X-Treg-Cost-Micro and which provider served it, a local ledger tracks
   the running total, and a per-call ceiling plus a session budget stop it from overspending.
   Storage: one SQLite file in the plugin data dir (postings cache, pipeline, profile, spend ledger);
-  the key itself is never stored, logged or echoed. No telemetry, no shell, no jobs applied to.
+  the key itself is never stored by the plugin, logged or echoed. No telemetry, no shell, no jobs
+  applied to, and it reads no file outside its own data dir.
 author: YAN-XBT
 homepage: https://github.com/YAN-XBT/hermes-jobs
 tags: [jobs, hiring, career, treg, salary, outreach, tracker]

@@ -205,15 +205,22 @@ def test_tool_map_override_merges_without_dropping_defaults():
 
 
 def test_no_key_means_a_clear_error_and_no_call():
-    saved = os.environ.pop("TREG_TOKEN", None)
-    with Patched(token_candidates=lambda: []):
-        try:
-            _call(_ctx().tools["jobs_search"]["handler"], {"query": "python"})
-        finally:
-            if saved is not None:
-                os.environ["TREG_TOKEN"] = saved
-    # the handler runs with the patched candidate list only inside the context
-    assert True
+    def no_key():
+        return ""
+
+    with Patched(token=no_key):
+        out = _call(_ctx().tools["jobs_search"]["handler"], {"query": "python"})
+    assert out["ok"] is False
+    assert "TREG_TOKEN is not set" in out["error"]
+    assert "team key" in out["hint"]
+
+
+def test_key_comes_from_the_secret_route_not_a_file():
+    """Catalog rule 11: no .env parsing, ever."""
+    source = (PKG_DIR / "treg.py").read_text(encoding="utf-8")
+    assert ".env" not in source.replace('".env"', "") or "get_secret" in source
+    assert "get_secret" in source
+    assert "read_text" not in source, "the client must not read credential files"
 
 
 def _main() -> int:
