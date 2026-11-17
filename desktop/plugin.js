@@ -112,7 +112,7 @@ function SpendHeader({ state }) {
           jsx('span', { className: 'text-[13px] font-medium', children: 'Jobs' }),
           jsx('span', {
             className: 'shrink-0 rounded border border-(--ui-stroke-secondary) px-1 text-[9px] text-(--ui-text-quaternary)',
-            children: '0.3.6'
+            children: '0.3.7'
           }),
           jsx(Badge, { children: `${state?.tracked ?? 0} tracked` }),
           jsx('span', { className: 'min-w-0 flex-1' }),
@@ -441,7 +441,7 @@ export default {
       id: 'pane',
       area: PANES_AREA,
       title: 'Jobs',
-      data: { placement: 'right', width: '360px', dock: { pane: 'workspace', pos: 'right' } },
+      data: { placement: 'right', width: '340px' },
       render: () => jsx(JobsPane, {})
     })
 
@@ -481,7 +481,11 @@ export default {
           id: 'treg-jobs.reveal',
           label: 'Jobs: show the pane beside the chat',
           keywords: ['jobs', 'pane', 'sidebar', 'treg-jobs'],
-          run: () => ctx.runAction('view.toggleRightSidebar')
+          run: () => {
+            // open the right zone, then land on our route so the tab is the visible one
+            api.runAction('view.toggleRightSidebar')
+            setTimeout(() => host.navigate(ROUTE), 120)
+          }
         }
       },
       {
