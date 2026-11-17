@@ -1,4 +1,4 @@
-name: hermes-jobs
+name: treg-jobs
 version: "0.2.0"
 manifest_version: 2
 api_version: 1
@@ -30,7 +30,7 @@ description: >
   the key itself is never stored by the plugin, logged or echoed. No telemetry, no shell, no jobs
   applied to, and it reads no file outside its own data dir.
 author: YAN-XBT
-homepage: https://github.com/YAN-XBT/hermes-jobs
+homepage: https://github.com/YAN-XBT/treg-jobs
 tags: [jobs, hiring, career, treg, salary, outreach, tracker]
 requires_env:
   - name: TREG_TOKEN

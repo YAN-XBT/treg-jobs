@@ -1,6 +1,6 @@
 """Offline suite: no network, no host, no key.
 
-Run with plain `python tests/test_hermes_jobs.py` and with pytest. The treg client's
+Run with plain `python tests/test_treg_jobs.py` and with pytest. The treg client's
 `call` is swapped for a fixture so every handler path — including the error envelopes
 — is driven without spending money.
 """
@@ -17,16 +17,16 @@ from pathlib import Path
 PKG_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PKG_DIR.parent))
 
-os.environ["HERMES_HOME"] = tempfile.mkdtemp(prefix="hermes-jobs-test-")
+os.environ["HERMES_HOME"] = tempfile.mkdtemp(prefix="treg-jobs-test-")
 
 _spec = importlib.util.spec_from_file_location(
-    "hermes_jobs", PKG_DIR / "__init__.py", submodule_search_locations=[str(PKG_DIR)]
+    "treg_jobs", PKG_DIR / "__init__.py", submodule_search_locations=[str(PKG_DIR)]
 )
 pkg = importlib.util.module_from_spec(_spec)
-sys.modules["hermes_jobs"] = pkg
+sys.modules["treg_jobs"] = pkg
 _spec.loader.exec_module(pkg)
 
-from hermes_jobs import store, tools, treg  # noqa: E402
+from treg_jobs import store, tools, treg  # noqa: E402
 
 
 class FakeCtx:
@@ -89,7 +89,7 @@ def test_registers_eight_tools():
     assert len(ctx.tools) == 8, sorted(ctx.tools)
     for name, entry in ctx.tools.items():
         assert entry["schema"]["name"] == name, name
-        assert entry["toolset"] == "hermes_jobs"
+        assert entry["toolset"] == "treg_jobs"
 
 
 def test_search_normalizes_and_caches():

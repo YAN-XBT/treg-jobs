@@ -1,11 +1,11 @@
 /**
- * hermes-jobs — desktop half. Ships inside the agent package as `desktop/plugin.js`
- * (the app copies it to <hermes home>/desktop-plugins/hermes-jobs/). Plain ESM, loaded
+ * treg-jobs — desktop half. Ships inside the agent package as `desktop/plugin.js`
+ * (the app copies it to <hermes home>/desktop-plugins/treg-jobs/). Plain ESM, loaded
  * uncompiled: the UI is jsx() calls, not JSX syntax. Only `@hermes/plugin-sdk`,
  * `react` and `react/jsx-runtime` resolve here.
  *
  * Everything it draws comes from the Python half's own namespace (`api.rest('/…')` →
- * /api/plugins/hermes-jobs/…), so the pane reads the same SQLite state the tools write:
+ * /api/plugins/treg-jobs/…), so the pane reads the same SQLite state the tools write:
  * the pipeline, who to write to, and what treg calls have cost. Nothing here spends
  * money — the only actions are a local status move and opening a posting in the browser.
  */
@@ -32,8 +32,8 @@ import {
 } from '@hermes/plugin-sdk'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
-const ID = 'hermes-jobs'
-const ROUTE = '/hermes-jobs'
+const ID = 'treg-jobs'
+const ROUTE = '/treg-jobs'
 
 // Set in register(ctx); components only render after it.
 let api = null
@@ -326,7 +326,7 @@ function JobsChip() {
 
 export default {
   id: ID, // must match the folder name
-  name: 'Hermes Jobs',
+  name: 'Treg Jobs',
   defaultEnabled: false,
   register(ctx) {
     api = ctx
@@ -362,9 +362,9 @@ export default {
         id: 'open',
         area: PALETTE_AREA,
         data: {
-          id: 'hermes-jobs.open',
+          id: 'treg-jobs.open',
           label: 'Jobs: open the pipeline',
-          keywords: ['jobs', 'pipeline', 'applications', 'hermes-jobs'],
+          keywords: ['jobs', 'pipeline', 'applications', 'treg-jobs'],
           run: () => host.navigate(ROUTE)
         }
       },
@@ -372,9 +372,9 @@ export default {
         id: 'reveal',
         area: PALETTE_AREA,
         data: {
-          id: 'hermes-jobs.reveal',
+          id: 'treg-jobs.reveal',
           label: 'Jobs: show the pane beside the chat',
-          keywords: ['jobs', 'pane', 'sidebar', 'hermes-jobs'],
+          keywords: ['jobs', 'pane', 'sidebar', 'treg-jobs'],
           run: () => ctx.runAction('view.toggleRightSidebar')
         }
       },
@@ -382,7 +382,7 @@ export default {
         id: 'hotkey',
         area: KEYBINDS_AREA,
         data: {
-          id: 'hermes-jobs.open',
+          id: 'treg-jobs.open',
           label: 'Jobs: open the pipeline',
           category: 'Jobs',
           defaults: ['mod+alt+j'],

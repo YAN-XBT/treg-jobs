@@ -1,6 +1,6 @@
 """Backend for the Jobs pane.
 
-Mounted at /api/plugins/hermes-jobs/. The gateway imports this module in the same
+Mounted at /api/plugins/treg-jobs/. The gateway imports this module in the same
 process as the plugin, so it reaches the SAME module objects the tools use — the
 pane reads live state, not a copy of it.
 

@@ -1,4 +1,4 @@
-# hermes-jobs
+# treg-jobs
 
 The whole job hunt, run by your agent through [treg](https://treg.to)'s job API: find roles across
 companies, rank them against a profile, find the people who work there, get one person's work email,
@@ -31,7 +31,7 @@ served it.
 ## Install
 
 ```bash
-hermes plugins install YAN-XBT/hermes-jobs      # or: copy this directory to $HERMES_HOME/plugins/hermes-jobs
+hermes plugins install YAN-XBT/treg-jobs      # or: copy this directory to $HERMES_HOME/plugins/treg-jobs
 ```
 
 Set the team key (one key carries the team and its balance). The key is entered through a hidden
@@ -87,7 +87,7 @@ reports `new_since_last_seen`, and the tracker keeps the pipeline that a chat sc
 ## Tests
 
 ```bash
-python tests/test_hermes_jobs.py     # 11 checks, offline, no key, no network
+python tests/test_treg_jobs.py     # 12 checks, offline, no key, no network
 hermes plugins validate .            # catalog gate
 hermes plugins doctor . --ci         # real discovery, import and registration
 ```

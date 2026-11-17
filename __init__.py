@@ -1,4 +1,4 @@
-"""hermes-jobs — the job hunt, run through treg's job API.
+"""treg-jobs — the job hunt, run through treg's job API.
 
 Eight tools over one team key: search roles across companies, semantic fit search,
 the people who own a role, their work email, real salary percentiles, roles that
@@ -15,9 +15,9 @@ from . import schemas, tools
 
 logger = logging.getLogger(__name__)
 
-PLUGIN_NAME = "hermes-jobs"
-PLUGIN_ID = "hermes-jobs"
-TOOLSET = "hermes_jobs"
+PLUGIN_NAME = "treg-jobs"
+PLUGIN_ID = "treg-jobs"
+TOOLSET = "treg_jobs"
 
 SETTING_KEYS = ("budget_usd", "max_cost_usd", "timeout_seconds", "waterfall", "tool_map")
 

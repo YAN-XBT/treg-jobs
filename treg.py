@@ -148,7 +148,7 @@ def call(
         "X-Treg-Token": tok,
         "X-Treg-Route-Max-Cost": str(cap),
         "Accept": "application/json",
-        "User-Agent": "hermes-jobs/0.2 (+https://github.com/YAN-XBT/hermes-jobs)",
+        "User-Agent": "treg-jobs/0.2 (+https://github.com/YAN-XBT/treg-jobs)",
     }
     if waterfall is not None:
         headers["X-Treg-Route-Waterfall"] = str(waterfall)

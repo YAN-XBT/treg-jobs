@@ -29,10 +29,10 @@ def _data_dir() -> Path:
     try:
         from plugins.plugin_storage import plugin_data_dir  # type: ignore
 
-        return Path(plugin_data_dir("hermes-jobs"))
+        return Path(plugin_data_dir("treg-jobs"))
     except Exception:
         home = os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")
-        return Path(home) / "plugin-data" / "hermes-jobs"
+        return Path(home) / "plugin-data" / "treg-jobs"
 
 
 def connect() -> sqlite3.Connection | None:
