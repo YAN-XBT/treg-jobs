@@ -327,7 +327,9 @@ function JobsChip() {
 export default {
   id: ID, // must match the folder name
   name: 'Treg Jobs',
-  defaultEnabled: false,
+  // The Python half is already gated by plugins.enabled; asking for a second toggle to
+  // see the pane is a step nobody finds.
+  defaultEnabled: true,
   register(ctx) {
     api = ctx
 
@@ -335,7 +337,7 @@ export default {
       id: 'pane',
       area: PANES_AREA,
       title: 'Jobs',
-      data: { placement: 'right', width: '360px' },
+      data: { placement: 'right', width: '360px', dock: { pane: 'workspace', pos: 'right' } },
       render: () => jsx(JobsPane, {})
     })
 
