@@ -78,6 +78,7 @@ def state() -> dict[str, Any]:
             },
             "key_present": bool(treg.token()),
             "pipeline": columns,
+            "profile": store.get_profile(),
             "tracked": len(rows),
             "jobs_cached": jobs_total,
             "db": store.db_path(),

@@ -24,12 +24,18 @@ import {
   queryClient,
   ROUTES_AREA,
   ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   SIDEBAR_NAV_AREA,
   STATUSBAR_AREAS,
   Tip,
   useMutation,
   useQuery
 } from '@hermes/plugin-sdk'
+import { useEffect, useState } from 'react'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
 const ID = 'treg-jobs'
@@ -104,6 +110,10 @@ function SpendHeader({ state }) {
         className: 'flex items-center gap-2',
         children: [
           jsx('span', { className: 'text-[13px] font-medium', children: 'Jobs' }),
+          jsx('span', {
+            className: 'shrink-0 rounded border border-(--ui-stroke-secondary) px-1 text-[9px] text-(--ui-text-quaternary)',
+            children: '0.3.5'
+          }),
           jsx(Badge, { children: `${state?.tracked ?? 0} tracked` }),
           jsx('span', { className: 'min-w-0 flex-1' }),
           jsx(Tip, {
@@ -135,65 +145,151 @@ function SpendHeader({ state }) {
   })
 }
 
+function StatusSelect({ row, move }) {
+  // Every stage in one control: no clicking through the chain to reach rejected.
+  return jsxs(Select, {
+    value: row.status,
+    onValueChange: value => move.mutate({ id: row.job_id, status: value }),
+    children: [
+      jsx(SelectTrigger, {
+        className: 'h-6 w-[112px] shrink-0 text-[11px]',
+        children: jsx(SelectValue, {})
+      }),
+      jsx(SelectContent, {
+        children: ['saved', 'researching', 'applied', 'interview', 'offer', 'rejected', 'skipped'].map(stage =>
+          jsx(SelectItem, { value: stage, className: 'text-[12px]', children: stage }, stage)
+        )
+      })
+    ]
+  })
+}
+
+function ProfileBar({ state }) {
+  const profile = state?.profile || {}
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (editing) setDraft(String(profile.summary || ''))
+  }, [editing])
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      await api.rest('/profile', { method: 'POST', body: { profile: { ...profile, summary: draft } } })
+      refresh()
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-1 border-b border-(--ui-stroke-secondary) px-3 py-2',
+    children: [
+      jsxs('div', {
+        className: 'flex items-center gap-1.5',
+        children: [
+          jsx('span', { className: 'shrink-0 text-[11px] text-(--ui-text-tertiary)', children: 'Profile' }),
+          jsx('span', {
+            className: 'min-w-0 flex-1 truncate text-[11px] text-(--ui-text-quaternary)',
+            title: String(profile.summary || ''),
+            children: profile.summary ? String(profile.summary) : 'none — paste a resume in chat, or write it here'
+          }),
+          jsx('span', {
+            className: 'shrink-0',
+            children: jsx(Button, {
+              size: 'sm',
+              variant: 'ghost',
+              onClick: () => setEditing(v => !v),
+              children: editing ? 'Cancel' : 'Edit'
+            })
+          })
+        ]
+      }),
+      editing
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1',
+            children: [
+              jsx('textarea', {
+                value: draft,
+                onChange: e => setDraft(e.target.value),
+                rows: 4,
+                placeholder: 'Senior backend engineer, 6 years Go and Postgres at fintech startups, remote EU, min 80k',
+                className:
+                  'w-full resize-y rounded border border-(--ui-stroke-secondary) bg-transparent px-2 py-1 text-[11px] outline-none'
+              }),
+              jsxs('div', {
+                className: 'flex items-center justify-end gap-1.5',
+                children: [
+                  jsx(Button, { size: 'sm', variant: 'ghost', onClick: save, children: saving ? 'Saving…' : 'Save' })
+                ]
+              })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
 function JobRow({ row, move, dense }) {
   const next = NEXT_STATUS[row.status] || 'applied'
-  // Nothing here may shrink an action off the edge: a narrow pane used to push the
-  // buttons out of the card entirely. Text truncates, actions never do, and the meta
-  // row wraps instead of overflowing.
+  // Stacked, not squeezed: title clamps to two lines, meta is one ellipsised line, and
+  // the actions row carries its own buttons right next to the badge. Nothing is pushed
+  // to a right edge, so a narrow pane cannot hide an action.
+  const actions = []
+  actions.push(jsx('span', { className: 'shrink-0', children: jsx(Badge, { children: row.status }) }, 'badge'))
+  if (row.person) {
+    actions.push(
+      jsx(
+        'span',
+        {
+          className: 'min-w-0 max-w-[38%] truncate text-[11px] text-(--ui-text-quaternary)',
+          title: row.person,
+          children: row.person
+        },
+        'person'
+      )
+    )
+  }
+  actions.push(jsx(StatusSelect, { row, move }, 'move'))
+  if (row.url) {
+    actions.push(
+      jsx(
+        'span',
+        {
+          className: 'shrink-0',
+          children: jsx(Button, {
+            size: 'sm',
+            variant: 'ghost',
+            onClick: () => api.os.openExternal(row.url),
+            children: 'Open'
+          })
+        },
+        'open'
+      )
+    )
+  }
+
   return jsxs('div', {
     className: cn(
-      'group flex min-w-0 flex-col gap-1 overflow-hidden border-b border-(--ui-stroke-secondary) px-3 py-2',
+      'group flex w-full min-w-0 flex-col gap-1 overflow-hidden border-b border-(--ui-stroke-secondary) px-3 py-2',
       dense ? '' : 'hover:bg-(--ui-stroke-secondary)/40'
     ),
     children: [
-      jsxs('div', {
-        className: 'flex min-w-0 items-start gap-2',
-        children: [
-          jsx('span', {
-            className: 'min-w-0 flex-1 truncate text-[13px] font-medium',
-            title: row.title,
-            children: row.title || '(untitled role)'
-          }),
-          row.url
-            ? jsx('span', {
-                className: 'shrink-0',
-                children: jsx(Button, {
-                  size: 'sm',
-                  variant: 'ghost',
-                  onClick: () => api.os.openExternal(row.url),
-                  children: 'Open'
-                })
-              })
-            : null
-        ]
+      jsx('div', {
+        className: 'min-w-0 text-[13px] font-medium leading-snug',
+        style: { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+        title: row.title,
+        children: row.title || '(untitled role)'
       }),
       jsx('div', {
         className: 'min-w-0 truncate text-[11px] text-(--ui-text-tertiary)',
         title: `${row.company || ''}${row.location ? ` · ${row.location}` : ''}`,
         children: `${row.company || '—'}${row.location ? ` · ${row.location}` : ''}`
       }),
-      jsxs('div', {
-        className: 'flex min-w-0 flex-wrap items-center gap-1.5',
-        children: [
-          jsx('span', { className: 'shrink-0', children: jsx(Badge, { children: row.status }) }),
-          row.person
-            ? jsx('span', {
-                className: 'min-w-0 max-w-[45%] truncate text-[11px] text-(--ui-text-quaternary)',
-                title: row.person,
-                children: row.person
-              })
-            : null,
-          jsx('span', {
-            className: 'ml-auto shrink-0',
-            children: jsx(Button, {
-              size: 'sm',
-              variant: 'ghost',
-              onClick: () => move.mutate({ id: row.job_id, status: next }),
-              children: `→ ${next}`
-            })
-          })
-        ]
-      })
+      jsxs('div', { className: 'flex min-w-0 flex-wrap items-center gap-1.5', children: actions })
     ]
   })
 }
@@ -238,6 +334,7 @@ function JobsPane() {
     className: 'flex h-full min-h-0 flex-col',
     children: [
       header,
+      jsx(ProfileBar, { state: state || {} }),
       jsx(ScrollArea, {
         className: 'min-h-0 flex-1',
         children: jsx('div', {
