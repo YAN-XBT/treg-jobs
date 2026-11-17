@@ -112,7 +112,7 @@ function SpendHeader({ state }) {
           jsx('span', { className: 'text-[13px] font-medium', children: 'Jobs' }),
           jsx('span', {
             className: 'shrink-0 rounded border border-(--ui-stroke-secondary) px-1 text-[9px] text-(--ui-text-quaternary)',
-            children: '0.3.5'
+            children: '0.3.6'
           }),
           jsx(Badge, { children: `${state?.tracked ?? 0} tracked` }),
           jsx('span', { className: 'min-w-0 flex-1' }),
@@ -234,62 +234,63 @@ function ProfileBar({ state }) {
 }
 
 function JobRow({ row, move, dense }) {
-  const next = NEXT_STATUS[row.status] || 'applied'
-  // Stacked, not squeezed: title clamps to two lines, meta is one ellipsised line, and
-  // the actions row carries its own buttons right next to the badge. Nothing is pushed
-  // to a right edge, so a narrow pane cannot hide an action.
-  const actions = []
-  actions.push(jsx('span', { className: 'shrink-0', children: jsx(Badge, { children: row.status }) }, 'badge'))
-  if (row.person) {
-    actions.push(
-      jsx(
-        'span',
-        {
-          className: 'min-w-0 max-w-[38%] truncate text-[11px] text-(--ui-text-quaternary)',
-          title: row.person,
-          children: row.person
-        },
-        'person'
-      )
-    )
-  }
-  actions.push(jsx(StatusSelect, { row, move }, 'move'))
+  // Actions come first and the contact text truncates last: the app's Tailwind build does not
+  // generate arbitrary utilities like max-w-[38%], so width limits are inline styles here.
+  const ellipsis = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }
+  const actions = [
+    jsx('span', { className: 'shrink-0', children: jsx(Badge, { children: row.status }) }, 'badge'),
+    jsx(StatusSelect, { row, move }, 'move')
+  ]
   if (row.url) {
     actions.push(
-      jsx(
-        'span',
-        {
-          className: 'shrink-0',
-          children: jsx(Button, {
-            size: 'sm',
-            variant: 'ghost',
-            onClick: () => api.os.openExternal(row.url),
-            children: 'Open'
-          })
-        },
-        'open'
-      )
+      jsx('span', {
+        className: 'shrink-0',
+        children: jsx(Button, {
+          size: 'sm',
+          variant: 'ghost',
+          onClick: () => api.os.openExternal(row.url),
+          children: 'Open'
+        })
+      }, 'open')
+    )
+  }
+  if (row.person) {
+    actions.push(
+      jsx('span', {
+        className: 'text-[11px] text-(--ui-text-quaternary)',
+        style: { ...ellipsis, flex: '1 1 80px', maxWidth: '100%' },
+        title: row.person,
+        children: row.person
+      }, 'person')
     )
   }
 
   return jsxs('div', {
     className: cn(
-      'group flex w-full min-w-0 flex-col gap-1 overflow-hidden border-b border-(--ui-stroke-secondary) px-3 py-2',
+      'group flex w-full flex-col gap-1 border-b border-(--ui-stroke-secondary) px-3 py-2',
       dense ? '' : 'hover:bg-(--ui-stroke-secondary)/40'
     ),
+    style: { minWidth: 0, overflow: 'hidden' },
     children: [
       jsx('div', {
-        className: 'min-w-0 text-[13px] font-medium leading-snug',
-        style: { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+        className: 'text-[13px] font-medium leading-snug',
+        style: {
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          minWidth: 0
+        },
         title: row.title,
         children: row.title || '(untitled role)'
       }),
       jsx('div', {
-        className: 'min-w-0 truncate text-[11px] text-(--ui-text-tertiary)',
+        className: 'text-[11px] text-(--ui-text-tertiary)',
+        style: ellipsis,
         title: `${row.company || ''}${row.location ? ` · ${row.location}` : ''}`,
         children: `${row.company || '—'}${row.location ? ` · ${row.location}` : ''}`
       }),
-      jsxs('div', { className: 'flex min-w-0 flex-wrap items-center gap-1.5', children: actions })
+      jsx('div', { className: 'flex items-center gap-1.5', style: { flexWrap: 'wrap', minWidth: 0 }, children: actions })
     ]
   })
 }
