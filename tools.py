@@ -108,6 +108,9 @@ def _norm_job(j: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": str(j.get("_id") or j.get("id") or j.get("platform_job_id") or ""),
         "company": str(j.get("company_name") or ""),
+        # the employer's own site, straight from the provider row: this is the input a
+        # people lookup needs, and the application link often points at a job board.
+        "domain": str(j.get("company_link") or ""),
         "title": str(j.get("job_title") or j.get("title") or ""),
         "location": str(j.get("location_raw") or j.get("location") or ""),
         "location_type": str(j.get("location_type") or ""),
@@ -236,7 +239,7 @@ def jobs_people(args: dict, **kwargs: Any) -> str:
         company_name = ""
         if job:
             company_name = str(job.get("company") or "")
-            domain = _employer_domain(str(job.get("url") or ""))
+            domain = str(job.get("domain") or "") or _employer_domain(str(job.get("url") or ""))
             role = role or str(job.get("title") or "")
         else:
             domain = _employer_domain(target) or target
@@ -254,7 +257,9 @@ def jobs_people(args: dict, **kwargs: Any) -> str:
             # employer — searching people at linkedin.com would be nonsense, so the
             # company name goes into the semantic query instead.
             body["q"] = " ".join(x for x in (company_name, role) if x)
-        answer, meta = _call("people", body=body)
+        # A miss still bills every provider tried (measured: $0.05 across 13), so this
+        # role pays one provider per call unless the user changes `waterfall`.
+        answer, meta = _call("people", body=body, waterfall=_waterfall() or "0")
         out = _unwrap(answer) or {}
         people = out.get("people") if isinstance(out, dict) else None
         people = people or []
@@ -282,6 +287,23 @@ def jobs_people(args: dict, **kwargs: Any) -> str:
         return _err(f"{type(e).__name__}: {e}")
 
 
+def _addr_domain(value: Any) -> str:
+    """The domain of whatever shape an email lookup returned."""
+    if isinstance(value, str):
+        return value.split("@")[-1].lower().strip() if "@" in value else ""
+    if isinstance(value, dict):
+        for key in ("email", "address", "value", "work_email"):
+            got = _addr_domain(value.get(key))
+            if got:
+                return got
+    if isinstance(value, list):
+        for item in value:
+            got = _addr_domain(item)
+            if got:
+                return got
+    return ""
+
+
 def jobs_email(args: dict, **kwargs: Any) -> str:
     try:
         body: dict[str, Any] = {}
@@ -289,7 +311,17 @@ def jobs_email(args: dict, **kwargs: Any) -> str:
             if str(args.get(key) or "").strip():
                 body[key] = str(args[key]).strip()
         if not body:
-            return _err("nothing to look up", hint="pass linkedin_url, or full_name with domain")
+            return _err(
+                "nothing to look up",
+                hint="pass linkedin_url, or full_name with domain",
+                variants=[["domain", "full_name"], ["domain", "first_name", "last_name"], ["linkedin_url"]],
+            )
+        if ("domain" in body) != ("full_name" in body or ("first_name" in body and "last_name" in body)) and "linkedin_url" not in body:
+            return _err(
+                "the provider needs one complete identity",
+                hint="either linkedin_url, or domain plus full_name, or domain plus first_name and last_name",
+                variants=[["domain", "full_name"], ["domain", "first_name", "last_name"], ["linkedin_url"]],
+            )
         answer, meta = _call("email", body=body)
         out = _unwrap(answer) or {}
         found = out.get("email") if isinstance(out, dict) else None
@@ -298,11 +330,19 @@ def jobs_email(args: dict, **kwargs: Any) -> str:
                 if out.get(key):
                     found = out[key]
                     break
+        # A provider often returns a former employer's address. When the caller knows the
+        # company, say so rather than letting a wrong domain look like a hit.
+        expect = str(args.get("expected_domain") or body.get("domain") or "").lower().strip()
+        found_domain = _addr_domain(found)
+        mismatch = bool(expect and found_domain and not found_domain.endswith(expect) and expect not in found_domain)
         verify = (out or {}).get("verification") if isinstance(out, dict) else None
         return _ok({
             "found": bool(found),
             "result": found,
             "verification": verify,
+            "found_domain": found_domain,
+            "domain_matches_employer": (None if not expect or not found_domain else not mismatch),
+            "warn": "the address is on a different domain than the employer — likely a former employer, verify before sending" if mismatch else "",
             "cost": meta,
             "note": "a hit is the provider's best match, not a confirmation — verify before anyone sends",
             "if_empty": "do not invent an address; ask the human which person to write to instead",

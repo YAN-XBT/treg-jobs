@@ -87,8 +87,9 @@ function useMove() {
 function money(usd) {
   const n = Number(usd || 0)
   if (!n) return '$0'
-  if (n < 0.01) return `$${n.toFixed(4)}`
-  return `$${n.toFixed(3)}`
+  // three decimals read as thousands to a human: $2.000 looks like two thousand dollars.
+  if (n < 1) return `$${n.toFixed(3)}`
+  return `$${n.toFixed(2)}`
 }
 
 function SpendHeader({ state }) {

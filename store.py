@@ -52,7 +52,7 @@ def connect() -> sqlite3.Connection | None:
                 """
                 CREATE TABLE IF NOT EXISTS jobs (
                     id TEXT PRIMARY KEY,
-                    company TEXT, title TEXT, location TEXT, location_type TEXT,
+                    company TEXT, domain TEXT, title TEXT, location TEXT, location_type TEXT,
                     url TEXT, board TEXT, posted TEXT, description TEXT,
                     source TEXT, first_seen TEXT, last_seen TEXT
                 );
@@ -64,6 +64,9 @@ def connect() -> sqlite3.Connection | None:
                 CREATE INDEX IF NOT EXISTS jobs_first_seen ON jobs(first_seen);
                 """
             )
+            cols = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+            if "domain" not in cols:
+                conn.execute("ALTER TABLE jobs ADD COLUMN domain TEXT DEFAULT ''")
             conn.commit()
             _CONN = conn
         except Exception:
@@ -99,16 +102,18 @@ def upsert_jobs(rows: list[dict[str, Any]], source: str = "") -> int:
             if row is None:
                 new += 1
             cur.execute(
-                """INSERT INTO jobs (id,company,title,location,location_type,url,board,posted,description,source,first_seen,last_seen)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                """INSERT INTO jobs (id,company,domain,title,location,location_type,url,board,posted,description,source,first_seen,last_seen)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(id) DO UPDATE SET
-                     company=excluded.company, title=excluded.title, location=excluded.location,
+                     company=excluded.company,
+                     domain=CASE WHEN excluded.domain != '' THEN excluded.domain ELSE jobs.domain END,
+                     title=excluded.title, location=excluded.location,
                      location_type=excluded.location_type, url=excluded.url, board=excluded.board,
                      posted=excluded.posted,
                      description=CASE WHEN excluded.description != '' THEN excluded.description ELSE jobs.description END,
                      source=excluded.source, last_seen=excluded.last_seen""",
                 (
-                    r["id"], r.get("company", ""), r.get("title", ""), r.get("location", ""),
+                    r["id"], r.get("company", ""), r.get("domain", ""), r.get("title", ""), r.get("location", ""),
                     r.get("location_type", ""), r.get("url", ""), r.get("board", ""), r.get("posted", ""),
                     r.get("description", ""), source, first, now,
                 ),
