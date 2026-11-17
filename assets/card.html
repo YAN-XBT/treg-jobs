@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset=utf-8><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1200px;height:600px;background:#0c0c0e;color:#e8e6e3;font-family:-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;display:flex}
+.left{width:430px;padding:38px 34px;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid #232326}
+.brand{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8d8a86}
+.dot{width:8px;height:8px;border-radius:50%;background:#EF9F27}
+h1{font-size:41px;line-height:1.06;margin-top:26px;font-weight:650;letter-spacing:-.01em}
+h1 em{font-style:normal;color:#EF9F27}
+p.sub{margin-top:16px;font-size:15px;line-height:1.5;color:#a8a49f}
+.flow{margin-top:22px;display:flex;flex-direction:column;gap:9px;font-size:13.5px;color:#cfccc7}
+.flow span b{color:#5DCAA5;font-weight:600}
+.prices{display:flex;gap:16px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;color:#b8b4ae}
+.prices i{font-style:normal;color:#ffffff}
+.right{flex:1;padding:26px 26px 0;display:flex;flex-direction:column;gap:12px;background:#0a0a0c}
+.bar{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#8d8a86}
+.badge{border:1px solid #2c2c30;border-radius:999px;padding:2px 9px;font-size:11px}
+.spend{margin-left:auto;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:#c8a06a}
+.meter{height:4px;border-radius:99px;background:#1c1c1f;overflow:hidden}
+.meter div{height:100%;width:3%;background:#EF9F27}
+.cols{display:flex;gap:11px;margin-top:2px;align-items:flex-start}
+.col{flex:1;display:flex;flex-direction:column;gap:7px}
+.ch{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6f6c68;display:flex;gap:6px;align-items:center}
+.ch u{text-decoration:none;color:#4d4b48}
+.card{height:94px;border:1px solid #232326;border-radius:7px;padding:9px 10px;background:#101013;display:flex;flex-direction:column;overflow:hidden}
+.card .t{font-size:12.5px;font-weight:560;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .c{font-size:11px;color:#8d8a86;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .m{font-size:10.5px;color:#5DCAA5;margin-top:auto;padding-top:5px;font-family:ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ghost{height:94px;border:1px dashed #1e1e21;border-radius:7px}
+</style></head><body>
+<div class=left>
+  <div>
+    <div class=brand><span class=dot></span>hermes-jobs · plugin</div>
+    <h1>The whole job hunt,<br>run by <em>your agent</em></h1>
+    <p class=sub>Live roles across companies, the people who own them, their work email and what the role really pays — with a pipeline that keeps what you sent.</p>
+    <div class=flow>
+      <span><b>1</b> &nbsp;find the role — <code>jobs_search</code></span>
+      <span><b>2</b> &nbsp;find who owns it — <code>jobs_people</code></span>
+      <span><b>3</b> &nbsp;get the address — <code>jobs_email</code></span>
+      <span><b>4</b> &nbsp;know the pay — <code>jobs_salary</code></span>
+    </div>
+  </div>
+  <div class=prices><span>search <i>$0.003</i></span><span>people <i>$0.007</i></span><span>email <i>$0.001</i></span><span>salary <i>$0.01</i></span></div>
+</div>
+<div class=right>
+  <div class=bar><b style="font-size:13px;color:#e8e6e3">Jobs</b><span class=badge>12 tracked</span><span class=spend>$0.052 spent · $1.948 left</span></div>
+  <div class=meter><div></div></div>
+  <div class=cols>
+    <div class=col>
+      <div class=ch>saved <u>2</u></div>
+      <div class=card><div class=t>Senior Backend Engineer (Python)</div><div class=c>Zattoo · Berlin, Hybrid</div><div class=m>peyman.salehi@zattoo.com</div></div>
+      <div class=card><div class=t>Senior Backend Engineer, Platform</div><div class=c>SplitMetrics · Remote EU</div><div class=m>#6afba312 · cached</div></div>
+    </div>
+    <div class=col>
+      <div class=ch>researching <u>1</u></div>
+      <div class=card><div class=t>Backend Engineer (Python)</div><div class=c>ev.energy · UK, Remote</div><div class=m>Lena Park · EM Payments</div></div>
+    </div>
+    <div class=col>
+      <div class=ch>applied <u>1</u></div>
+      <div class=card><div class=t>Senior Python Engineer</div><div class=c>SumUp · Berlin</div><div class=m>€122k p50 · 18 rows</div></div>
+    </div>
+    <div class=col>
+      <div class=ch>interview <u>0</u></div>
+      <div class=ghost></div>
+    </div>
+  </div>
+</div>
+</body></html>

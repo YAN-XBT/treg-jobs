@@ -1,0 +1,67 @@
+name: hermes-jobs
+version: "0.2.0"
+manifest_version: 2
+api_version: 1
+license: MIT
+requires_hermes: ">=0.22"
+description: >
+  The whole job hunt, run through treg's job API. Search open roles across companies (routed over
+  7 job providers, 0% markup, billed per hit), run a semantic fit search against a profile, find the
+  people who work at that company and the team that would own the role, look up one person's work
+  email, pull real salary percentiles with the sample size behind them, see which roles closed since
+  a date, and keep a local pipeline (saved / researching / applied / interview / offer / rejected)
+  with who to write to. Eight tools: jobs_search, jobs_match, jobs_people, jobs_email, jobs_salary,
+  jobs_changes, jobs_tracker, jobs_doctor.
+  Read-only with respect to the world: it never submits an application, never emails anyone, never
+  logs in to a job board. Every send stays the human's action, and a found address is labelled the
+  provider's best match rather than a confirmed one.
+  Disclosure — this plugin speaks only to https://treg.to and needs a treg team key: set TREG_TOKEN
+  (read from the environment, else the profile's .env). Every network call is one metered request to
+  treg.to/call/<id> carrying that key, the call's cost ceiling in X-Treg-Route-Max-Cost, and an
+  optional X-Treg-Route-Waterfall; treg then reaches the underlying provider with its own
+  credentials, so no provider account or key lives here. Calls cost money from that team's prepaid
+  balance: search is billed per returned job (about $0.003 a call observed), people about $0.007,
+  an email lookup about $0.001, salary insights about $0.01, the roles-closed call is free. Every
+  result reports the cost from X-Treg-Cost-Micro and which provider served it, a local ledger tracks
+  the running total, and a per-call ceiling plus a session budget stop it from overspending.
+  Storage: one SQLite file in the plugin data dir (postings cache, pipeline, profile, spend ledger);
+  the key itself is never stored, logged or echoed. No telemetry, no shell, no jobs applied to.
+author: YAN-XBT
+homepage: https://github.com/YAN-XBT/hermes-jobs
+tags: [jobs, hiring, career, treg, salary, outreach, tracker]
+requires_env:
+  - name: TREG_TOKEN
+    description: "treg team key — carries the team and its prepaid balance. Copy it from the treg dashboard (Your API key)."
+    url: https://treg.to/app
+    secret: true
+provides_tools:
+  - jobs_search
+  - jobs_match
+  - jobs_people
+  - jobs_email
+  - jobs_salary
+  - jobs_changes
+  - jobs_tracker
+  - jobs_doctor
+provides_hooks: []
+config_schema:
+  budget_usd:
+    type: float
+    default: 2.0
+    description: "Session budget for treg calls, in USD. A call is refused once the local ledger reaches it."
+  max_cost_usd:
+    type: float
+    default: 0.5
+    description: "Ceiling for a single call, sent as X-Treg-Route-Max-Cost (micro-USD)."
+  timeout_seconds:
+    type: int
+    default: 120
+    description: "Per-call HTTP timeout; semantic matching legitimately takes 15-25 s."
+  waterfall:
+    type: str
+    default: ""
+    description: "Set to 0 to pay one provider per call instead of every provider tried (cheaper, less fallback)."
+  tool_map:
+    type: str
+    default: ""
+    description: "JSON override of the tool ids ({\"search\":\"…\"}) if treg renames one; jobs_doctor reports what resolves."

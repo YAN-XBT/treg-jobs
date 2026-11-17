@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+assets/card-2x.png
+.hermes-package.json
