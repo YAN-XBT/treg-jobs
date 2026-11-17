@@ -20,7 +20,6 @@ import {
   host,
   KEYBINDS_AREA,
   PALETTE_AREA,
-  PANES_AREA,
   queryClient,
   ROUTES_AREA,
   ScrollArea,
@@ -112,7 +111,7 @@ function SpendHeader({ state }) {
           jsx('span', { className: 'text-[13px] font-medium', children: 'Jobs' }),
           jsx('span', {
             className: 'shrink-0 rounded border border-(--ui-stroke-secondary) px-1 text-[9px] text-(--ui-text-quaternary)',
-            children: '0.3.7'
+            children: '0.3.8'
           }),
           jsx(Badge, { children: `${state?.tracked ?? 0} tracked` }),
           jsx('span', { className: 'min-w-0 flex-1' }),
@@ -295,58 +294,6 @@ function JobRow({ row, move, dense }) {
   })
 }
 
-function JobsPane() {
-  const query = useJobsState()
-  const move = useMove()
-  const state = query.data
-
-  if (query.isError) {
-    return jsx(ErrorState, {
-      title: 'Jobs backend unreachable',
-      description: String(query.error?.message || query.error)
-    })
-  }
-  if (state && state.ok === false) {
-    return jsx(ErrorState, { title: 'Jobs backend error', description: String(state.error) })
-  }
-
-  const pipeline = state?.pipeline || {}
-  const rows = COLUMNS.flatMap(c => pipeline[c.key] || [])
-  const header = jsx(SpendHeader, { state: state || {} })
-
-  if (!rows.length) {
-    return jsxs('div', {
-      className: 'flex h-full min-h-0 flex-col',
-      children: [
-        header,
-        jsx('div', {
-          className: 'flex-1 p-3',
-          children: jsx(EmptyState, {
-            title: 'Nothing tracked yet',
-            description:
-              'Ask the agent for a search — jobs_search finds live roles, jobs_people finds who owns one — then save a role and it appears here.'
-          })
-        })
-      ]
-    })
-  }
-
-  return jsxs('div', {
-    className: 'flex h-full min-h-0 flex-col',
-    children: [
-      header,
-      jsx(ProfileBar, { state: state || {} }),
-      jsx(ScrollArea, {
-        className: 'min-h-0 flex-1',
-        children: jsx('div', {
-          className: 'flex flex-col',
-          children: rows.map(row => jsx(JobRow, { row, move, dense: true }, row.job_id))
-        })
-      })
-    ]
-  })
-}
-
 function JobsPage() {
   const query = useJobsState()
   const move = useMove()
@@ -365,6 +312,7 @@ function JobsPage() {
     className: 'flex h-full min-h-0 flex-col',
     children: [
       jsx(SpendHeader, { state: state || {} }),
+      jsx(ProfileBar, { state: state || {} }),
       jsx(ScrollArea, {
         className: 'min-h-0 flex-1',
         children: jsx('div', {
@@ -438,14 +386,6 @@ export default {
     api = ctx
 
     ctx.register({
-      id: 'pane',
-      area: PANES_AREA,
-      title: 'Jobs',
-      data: { placement: 'right', width: '340px' },
-      render: () => jsx(JobsPane, {})
-    })
-
-    ctx.register({
       id: 'chip',
       area: STATUSBAR_AREAS.right,
       order: 130,
@@ -479,13 +419,9 @@ export default {
         area: PALETTE_AREA,
         data: {
           id: 'treg-jobs.reveal',
-          label: 'Jobs: show the pane beside the chat',
-          keywords: ['jobs', 'pane', 'sidebar', 'treg-jobs'],
-          run: () => {
-            // open the right zone, then land on our route so the tab is the visible one
-            api.runAction('view.toggleRightSidebar')
-            setTimeout(() => host.navigate(ROUTE), 120)
-          }
+          label: 'Jobs: open the pipeline',
+          keywords: ['jobs', 'pipeline', 'sidebar', 'treg-jobs'],
+          run: () => host.navigate(ROUTE)
         }
       },
       {
