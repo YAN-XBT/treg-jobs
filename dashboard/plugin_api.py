@@ -10,6 +10,7 @@ pane can print the reason instead of showing an opaque 500.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,18 @@ def _pkg() -> Any:
         if hasattr(module, "store") and hasattr(module, "treg"):
             return module
     return None
+
+
+def _salary() -> dict[str, Any] | None:
+    """The last salary answer, kept by the jobs_salary tool."""
+    try:
+        raw = _pkg().store.get_meta("salary_snapshot")
+        if not raw:
+            return None
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else None
+    except Exception:
+        return None
 
 
 def _fail(exc: Exception) -> dict[str, Any]:
@@ -79,6 +92,7 @@ def state() -> dict[str, Any]:
             "key_present": bool(treg.token()),
             "pipeline": columns,
             "profile": store.get_profile(),
+            "salary": _salary(),
             "tracked": len(rows),
             "jobs_cached": jobs_total,
             "db": store.db_path(),

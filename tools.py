@@ -370,6 +370,20 @@ def jobs_salary(args: dict, **kwargs: Any) -> str:
             body["geo_locations"] = [geo]
         answer, meta = _call("salary", body=body)
         out = _unwrap(answer) or {}
+        # keep the snapshot: the pane draws it without paying for the call again
+        try:
+            store.set_meta("salary_snapshot", json.dumps({
+                "query": {"title": title, "city": geo.get("city", ""), "country": geo.get("country", "")},
+                "headline": (out or {}).get("headline"),
+                "salary": (out or {}).get("salary"),
+                "by_level": (out or {}).get("salary_by_level") or [],
+                "by_location_type": (out or {}).get("salary_by_location_type") or [],
+                "top_companies": ((out or {}).get("top_companies") or [])[:5],
+                "yoe_median": (out or {}).get("yoe_median"),
+                "ts": meta.get("call_id", ""),
+            }))
+        except Exception:
+            pass
         return _ok({
             "headline": (out or {}).get("headline") if isinstance(out, dict) else None,
             "salary": (out or {}).get("salary") if isinstance(out, dict) else None,

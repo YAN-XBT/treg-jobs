@@ -112,7 +112,7 @@ function SpendHeader({ state }) {
           jsx('span', { className: 'text-[13px] font-medium', children: 'Jobs' }),
           jsx('span', {
             className: 'shrink-0 rounded border border-(--ui-stroke-secondary) px-1 text-[9px] text-(--ui-text-quaternary)',
-            children: '0.3.9'
+            children: '0.4.0'
           }),
           jsx(Badge, { children: `${state?.tracked ?? 0} tracked` }),
           jsx('span', { className: 'min-w-0 flex-1' }),
@@ -233,6 +233,74 @@ function ProfileBar({ state }) {
   })
 }
 
+function SalaryCard({ salary }) {
+  if (!salary || !salary.salary) return null
+  const s = salary.salary || {}
+  const h = salary.headline || {}
+  const cur = s.currency || h.salary_currency || ''
+  const fmt = v => (v == null ? '—' : `${cur === 'USD' || !cur ? '$' : cur + ' '}${Math.round(Number(v)).toLocaleString()}`)
+  const hist = Array.isArray(s.histogram) ? s.histogram : []
+  const peak = Math.max(1, ...hist.map(b => Number(b.count) || 0))
+  const levels = (salary.by_level || []).filter(l => l && l.p50)
+  const companies = (salary.top_companies || []).map(c => c.company_name).filter(Boolean).slice(0, 4)
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-1.5 border-b border-(--ui-stroke-secondary) px-3 py-2',
+    children: [
+      jsxs('div', {
+        className: 'flex items-baseline gap-1.5 text-[11px]',
+        children: [
+          jsx('span', { className: 'shrink-0 text-(--ui-text-tertiary)', children: 'Pay' }),
+          jsx('span', {
+            style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 },
+            className: 'text-(--ui-text-quaternary)',
+            children: [salary.query?.title, salary.query?.country].filter(Boolean).join(' · ')
+          })
+        ]
+      }),
+      jsxs('div', {
+        className: 'flex items-baseline gap-2',
+        children: [
+          jsx('span', { className: 'text-[16px] font-semibold', children: fmt(s.p50 ?? h.median_salary) }),
+          jsx('span', { className: 'text-[11px] text-(--ui-text-quaternary)', children: 'median' }),
+          jsx('span', {
+            className: 'ml-auto text-[10px] text-(--ui-text-quaternary)',
+            style: { textAlign: 'right' },
+            children: `${h.total_count ?? '—'} postings · ${h.pct_disclosing_salary ?? '—'}% disclose · ${s.count ?? 0} with pay`
+          })
+        ]
+      }),
+      jsx('div', {
+        className: 'flex items-end gap-1',
+        style: { height: '26px' },
+        children: hist.map((b, i) =>
+          jsx('div', {
+            key: `b${i}`,
+            title: `${Math.round(b.lower).toLocaleString()}–${Math.round(b.upper).toLocaleString()}: ${b.count}`,
+            style: {
+              flex: '1 1 0',
+              height: `${Math.max(8, Math.round(((Number(b.count) || 0) / peak) * 26))}%`,
+              background: 'var(--ui-accent)',
+              opacity: 0.55
+            }
+          })
+        )
+      }),
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-(--ui-text-quaternary)',
+        children: [
+          jsx('span', { children: `p25 ${fmt(s.p25)} · p75 ${fmt(s.p75)} · p90 ${fmt(s.p90)}` }),
+          salary.yoe_median ? jsx('span', { children: `· ${salary.yoe_median} y median` }) : null,
+          levels.length
+            ? jsx('span', { children: `· ${levels.map(l => `${String(l.key).split(' ')[0]} ${fmt(l.p50)}`).slice(0, 3).join(' · ')}` })
+            : null,
+          companies.length ? jsx('span', { children: `· ${companies.join(', ')}` }) : null
+        ]
+      })
+    ]
+  })
+}
+
 function JobRow({ row, move, dense }) {
   // Actions come first and the contact text truncates last: the app's Tailwind build does not
   // generate arbitrary utilities like max-w-[38%], so width limits are inline styles here.
@@ -309,6 +377,7 @@ function JobsPane() {
     children: [
       jsx(SpendHeader, { state: state || {} }),
       jsx(ProfileBar, { state: state || {} }),
+      jsx(SalaryCard, { salary: state?.salary }),
       rows.length
         ? jsx(ScrollArea, {
             className: 'min-h-0 flex-1',
@@ -347,6 +416,7 @@ function JobsPage() {
     children: [
       jsx(SpendHeader, { state: state || {} }),
       jsx(ProfileBar, { state: state || {} }),
+      jsx(SalaryCard, { salary: state?.salary }),
       jsx(ScrollArea, {
         className: 'min-h-0 flex-1',
         children: jsx('div', {
